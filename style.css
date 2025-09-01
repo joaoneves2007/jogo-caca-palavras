@@ -1,0 +1,277 @@
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --background-color: #f8f9fa;
+    --grid-bg-color: #ffffff;
+    --found-word-color: #28a745;
+    --text-color: #343a40;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+}
+
+.header {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.logo {
+    width: clamp(80px, 10vw, 120px);
+    opacity: 0.7;
+}
+
+#game-container {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    max-width: 1000px;
+    width: 100%;
+    min-height: 600px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.screen {
+    display: none;
+    text-align: center;
+    width: 100%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.screen.active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Telas */
+#start-screen h1, #end-screen h2, #ranking-screen h2 {
+    font-size: clamp(1.8rem, 5vw, 2.5rem);
+    color: var(--primary-color);
+    margin-bottom: 20px;
+}
+
+.start-game-button, .view-ranking-button, #restart-button, #end-screen button, #ranking-screen button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    margin: 10px;
+    border-radius: 5px;
+    font-size: clamp(1rem, 3vw, 1.2rem);
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.start-game-button:hover, .view-ranking-button:hover, #restart-button:hover, #end-screen button:hover, #ranking-screen button:hover {
+    background-color: #0056b3;
+}
+
+.level-select-container {
+    margin-bottom: 20px;
+    font-size: 1.2rem;
+}
+
+#level-select {
+    padding: 10px;
+    font-size: 1rem;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    margin-left: 10px;
+}
+
+/* Jogo */
+#game-screen {
+    justify-content: flex-start;
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.game-info {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.info-item {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.game-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    flex-grow: 1;
+}
+
+#word-grid-container {
+    overflow: auto;
+    margin-bottom: 20px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    flex-grow: 1;
+}
+
+#word-grid {
+    border-collapse: collapse;
+    background-color: var(--grid-bg-color);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+#word-grid td {
+    border: 1px solid #ccc;
+    width: clamp(25px, 5vw, 40px);
+    height: clamp(25px, 5vw, 40px);
+    text-align: center;
+    font-size: clamp(0.9rem, 3vw, 1.2rem);
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+#word-grid td:hover {
+    background-color: #e9ecef;
+}
+
+.cell-selected {
+    background-color: #d1e7dd !important;
+}
+
+.cell-found {
+    background-color: var(--found-word-color) !important;
+    color: white;
+    font-weight: bold;
+}
+
+#word-list {
+    background: #f1f1f1;
+    padding: 15px;
+    border-radius: 8px;
+    width: 100%;
+    min-height: 100px;
+    margin-top: 10px;
+}
+
+#words-to-find {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+#words-to-find li {
+    font-size: 1rem;
+    padding: 5px 10px;
+    background: #e9ecef;
+    border-radius: 5px;
+}
+
+#words-to-find li.found {
+    text-decoration: line-through;
+    color: var(--secondary-color);
+}
+
+/* Ranking e Fim de Jogo */
+#ranking-screen h2 {
+    margin-bottom: 20px;
+}
+
+#ranking-list {
+    list-style-position: inside;
+    padding: 0;
+    text-align: left;
+    margin: 0 auto;
+    max-width: 400px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+#ranking-list li {
+    background: #e9ecef;
+    margin-bottom: 5px;
+    padding: 12px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.1rem;
+}
+
+#end-screen #save-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+}
+
+#player-name {
+    padding: 10px;
+    font-size: 1rem;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+}
+
+/* Responsividade */
+@media (min-width: 768px) {
+    .game-content {
+        flex-direction: row;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 20px;
+    }
+    
+    #word-grid-container {
+        flex: 1;
+        width: auto;
+        max-width: 60%;
+    }
+
+    #word-grid td {
+        width: 40px;
+        height: 40px;
+    }
+
+    #word-list {
+        width: 35%;
+        min-height: 400px;
+    }
+
+    #words-to-find {
+        flex-direction: column;
+        justify-content: flex-start;
+    }
+}
