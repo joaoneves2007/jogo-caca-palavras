@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
     easy: {
       size: 10,
       words: ["GATO", "SOL", "CASA", "LUA", "CARRO", "AMOR"],
-      time: 120,
+      time: 240,
     },
     medium: {
       size: 14,
@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
         "JAVASCRIPT",
         "TECNOLOGIA",
       ],
-      time: 180,
+      time: 360,
     },
     hard: {
       size: 18,
@@ -52,7 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
         "RESPONSIVIDADE",
         "CIBERSEGURANCA",
       ],
-      time: 240,
+      time: 480,
     },
   };
 
@@ -122,39 +122,51 @@ document.addEventListener("DOMContentLoaded", () => {
 
     for (let i = 0; i < size; i++) {
       gridData[i] = [];
+      for (let j = 0; j < size; j++) {
+        gridData[i][j] = ""; // Preenche com vazio primeiro
+      }
+    }
+
+    placeWordsInGrid();
+    fillEmptyCells();
+    renderGrid();
+  }
+
+  function renderGrid() {
+    const size = currentLevel.size;
+    wordGridTable.innerHTML = "";
+    for (let i = 0; i < size; i++) {
       const row = wordGridTable.insertRow();
       for (let j = 0; j < size; j++) {
-        gridData[i][j] = getRandomLetter();
         const cell = row.insertCell();
         cell.textContent = gridData[i][j];
         cell.dataset.row = i;
         cell.dataset.col = j;
       }
     }
-
-    placeWordsInGrid();
   }
 
   function placeWordsInGrid() {
     const size = currentLevel.size;
     const words = shuffleArray(currentLevel.words.slice());
 
+    const directions = [
+      [1, 0],
+      [0, 1],
+      [1, 1],
+      [1, -1],
+      [-1, 0],
+      [0, -1],
+      [-1, -1],
+      [-1, 1],
+    ];
+
     for (const word of words) {
       let placed = false;
       let attempts = 0;
-      const maxAttempts = 200;
+      const maxAttempts = size * size * 2; // Aumenta as tentativas
 
       while (!placed && attempts < maxAttempts) {
-        const directions = [
-          [1, 0],
-          [0, 1],
-          [1, 1],
-          [1, -1],
-          [-1, 0],
-          [0, -1],
-          [-1, -1],
-          [-1, 1],
-        ];
         const dir = directions[Math.floor(Math.random() * directions.length)];
         const startRow = Math.floor(Math.random() * size);
         const startCol = Math.floor(Math.random() * size);
@@ -177,14 +189,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const r = startRow + i * dr;
       const c = startCol + i * dc;
 
+      // Fora dos limites da grade
       if (r < 0 || r >= size || c < 0 || c >= size) {
         return false;
       }
-      const currentCellLetter = gridData[r][c];
-      if (
-        currentCellLetter !== word[i] &&
-        currentCellLetter !== getRandomLetter()
-      ) {
+
+      // Conflito com letras já existentes
+      if (gridData[r][c] !== "" && gridData[r][c] !== word[i]) {
         return false;
       }
     }
@@ -195,9 +206,17 @@ document.addEventListener("DOMContentLoaded", () => {
     let [dr, dc] = dir;
     for (let i = 0; i < word.length; i++) {
       gridData[startRow + i * dr][startCol + i * dc] = word[i];
-      wordGridTable.rows[startRow + i * dr].cells[
-        startCol + i * dc
-      ].textContent = word[i];
+    }
+  }
+
+  function fillEmptyCells() {
+    const size = currentLevel.size;
+    for (let i = 0; i < size; i++) {
+      for (let j = 0; j < size; j++) {
+        if (gridData[i][j] === "") {
+          gridData[i][j] = getRandomLetter();
+        }
+      }
     }
   }
 
@@ -351,7 +370,6 @@ document.addEventListener("DOMContentLoaded", () => {
     ranking.sort((a, b) => b.score - a.score);
     rankingList.innerHTML = "";
     ranking.slice(0, 10).forEach((item, index) => {
-      // Mostra os 10 primeiros
       const li = document.createElement("li");
       li.innerHTML = `<span>${index + 1}. ${item.name}</span><span>${
         item.score
