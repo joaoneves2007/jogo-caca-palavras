@@ -18,8 +18,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let timeLeft;
   let gridData = [];
   let selectedCells = [];
-  let isSelecting = false;
   let foundWords = [];
+  let firstClickCell = null;
 
   const levels = {
     easy: {
@@ -56,7 +56,34 @@ document.addEventListener("DOMContentLoaded", () => {
     },
   };
 
-  // Função para mostrar a tela correta
+  // --- Lógica de Áudio Completa ---
+  const sounds = {
+    intro: new Audio("audio/intro.mp3"),
+    game: new Audio("audio/game.mp3"),
+    acerto: new Audio("audio/acerto.mp3"),
+    win: new Audio("audio/win.mp3"),
+    lose: new Audio("audio/lose.mp3"),
+    ranking: new Audio("audio/ranking.mp3"), // Adição da música para a tela de ranking
+  };
+
+  function playSound(soundName, loop = false) {
+    if (sounds[soundName]) {
+      sounds[soundName].loop = loop;
+      sounds[soundName].volume = 0.5;
+      sounds[soundName]
+        .play()
+        .catch((e) => console.error("Erro ao tocar o áudio:", e));
+    }
+  }
+
+  function stopAllSounds() {
+    for (const key in sounds) {
+      sounds[key].pause();
+      sounds[key].currentTime = 0;
+    }
+  }
+  // --- Fim da Lógica de Áudio ---
+
   window.showScreen = (screenId) => {
     const allScreens = [startScreen, gameScreen, rankingScreen, endScreen];
     allScreens.forEach((screen) => {
@@ -66,6 +93,12 @@ document.addEventListener("DOMContentLoaded", () => {
         screen.classList.remove("active");
       }
     });
+    stopAllSounds();
+    if (screenId === "start-screen") {
+      playSound("intro", true);
+    } else if (screenId === "ranking-screen") {
+      playSound("ranking", true); // Toca a música do ranking
+    }
   };
 
   window.startGameFromDropdown = () => {
@@ -76,12 +109,13 @@ document.addEventListener("DOMContentLoaded", () => {
     scoreDisplay.textContent = score;
     selectedCells = [];
     playerNameInput.value = "";
+    firstClickCell = null;
 
     generateGrid();
     renderWordsToFind();
 
     showScreen("game-screen");
-
+    playSound("game", true);
     startTimer();
   };
 
@@ -119,14 +153,12 @@ document.addEventListener("DOMContentLoaded", () => {
     gridData = [];
     const size = currentLevel.size;
     wordGridTable.innerHTML = "";
-
     for (let i = 0; i < size; i++) {
       gridData[i] = [];
       for (let j = 0; j < size; j++) {
-        gridData[i][j] = ""; // Preenche com vazio primeiro
+        gridData[i][j] = "";
       }
     }
-
     placeWordsInGrid();
     fillEmptyCells();
     renderGrid();
@@ -149,7 +181,6 @@ document.addEventListener("DOMContentLoaded", () => {
   function placeWordsInGrid() {
     const size = currentLevel.size;
     const words = shuffleArray(currentLevel.words.slice());
-
     const directions = [
       [1, 0],
       [0, 1],
@@ -164,13 +195,11 @@ document.addEventListener("DOMContentLoaded", () => {
     for (const word of words) {
       let placed = false;
       let attempts = 0;
-      const maxAttempts = size * size * 2; // Aumenta as tentativas
-
+      const maxAttempts = size * size * 2;
       while (!placed && attempts < maxAttempts) {
         const dir = directions[Math.floor(Math.random() * directions.length)];
         const startRow = Math.floor(Math.random() * size);
         const startCol = Math.floor(Math.random() * size);
-
         if (canPlaceWord(word, startRow, startCol, dir)) {
           placeWord(word, startRow, startCol, dir);
           placed = true;
@@ -184,17 +213,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const size = currentLevel.size;
     const len = word.length;
     let [dr, dc] = dir;
-
     for (let i = 0; i < len; i++) {
       const r = startRow + i * dr;
       const c = startCol + i * dc;
-
-      // Fora dos limites da grade
       if (r < 0 || r >= size || c < 0 || c >= size) {
         return false;
       }
-
-      // Conflito com letras já existentes
       if (gridData[r][c] !== "" && gridData[r][c] !== word[i]) {
         return false;
       }
@@ -243,56 +267,90 @@ document.addEventListener("DOMContentLoaded", () => {
     clearInterval(timer);
     showScreen("end-screen");
     finalScoreDisplay.textContent = score;
+    stopAllSounds();
 
     if (isWinner) {
       endMessage.textContent = "Parabéns, você encontrou todas as palavras!";
       const bonus = Math.floor(timeLeft / 10);
       score += bonus;
       alert(`Parabéns! Você ganhou um bônus de tempo de ${bonus} pontos!`);
+      playSound("win");
     } else {
       endMessage.textContent = "Fim de jogo! O tempo acabou.";
+      playSound("lose");
     }
   }
 
-  // Lógica de seleção
-  wordGridTable.addEventListener("mousedown", (e) => {
+  // --- Nova Lógica de Seleção por Clique ---
+  wordGridTable.addEventListener("click", (e) => {
     if (
       e.target.tagName === "TD" &&
       !e.target.classList.contains("cell-found")
     ) {
-      isSelecting = true;
-      clearSelection();
-      selectCell(e.target);
+      if (firstClickCell === null) {
+        // Primeiro clique
+        clearSelection();
+        firstClickCell = e.target;
+        selectCellsBetween(firstClickCell, firstClickCell);
+      } else {
+        // Segundo clique
+        const lastClickCell = e.target;
+        const potentialCells = getCellsBetween(firstClickCell, lastClickCell);
+
+        if (potentialCells.length > 1) {
+          selectedCells = potentialCells;
+          checkSelection();
+        } else {
+          clearSelection();
+        }
+        firstClickCell = null;
+      }
     }
   });
 
-  wordGridTable.addEventListener("mouseover", (e) => {
+  function getCellsBetween(startCell, endCell) {
+    const startRow = parseInt(startCell.dataset.row);
+    const startCol = parseInt(startCell.dataset.col);
+    const endRow = parseInt(endCell.dataset.row);
+    const endCol = parseInt(endCell.dataset.col);
+
+    const cells = [];
+    const rowDiff = endRow - startRow;
+    const colDiff = endCol - startCol;
+    const rowStep = Math.sign(rowDiff);
+    const colStep = Math.sign(colDiff);
+
+    // Verifica se é uma linha reta (horizontal, vertical ou diagonal)
     if (
-      isSelecting &&
-      e.target.tagName === "TD" &&
-      !e.target.classList.contains("cell-found")
+      Math.abs(rowDiff) === 0 ||
+      Math.abs(colDiff) === 0 ||
+      Math.abs(rowDiff) === Math.abs(colDiff)
     ) {
-      selectCell(e.target);
+      const length = Math.max(Math.abs(rowDiff), Math.abs(colDiff)) + 1;
+      for (let i = 0; i < length; i++) {
+        const row = startRow + i * rowStep;
+        const col = startCol + i * colStep;
+        const cell = wordGridTable.rows[row].cells[col];
+        cells.push(cell);
+      }
     }
-  });
+    return cells;
+  }
 
-  wordGridTable.addEventListener("mouseup", () => {
-    if (isSelecting) {
-      isSelecting = false;
-      checkSelection();
-    }
-  });
+  function selectCellsBetween(startCell, endCell) {
+    clearSelection();
+    const cells = getCellsBetween(startCell, endCell);
+    cells.forEach((cell) => {
+      if (!cell.classList.contains("cell-found")) {
+        cell.classList.add("cell-selected");
+      }
+    });
+  }
+  // --- Fim da Nova Lógica de Seleção ---
 
   function clearSelection() {
     selectedCells.forEach((cell) => cell.classList.remove("cell-selected"));
     selectedCells = [];
-  }
-
-  function selectCell(cell) {
-    if (!selectedCells.includes(cell)) {
-      cell.classList.add("cell-selected");
-      selectedCells.push(cell);
-    }
   }
 
   function checkSelection() {
@@ -332,6 +390,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ).find((li) => li.textContent === word);
     if (listItem) {
       listItem.classList.add("found");
+      playSound("acerto");
     }
 
     score += word.length * 10;
